@@ -21,9 +21,27 @@ let tray = null;
 let pythonServer = null;
 let serverReady = false;
 
+// ─── 포트 점유 프로세스 종료 (Windows) ───────────────────────
+function killPortWin(port) {
+  return new Promise((resolve) => {
+    const { exec } = require('child_process');
+    exec(
+      `for /f "tokens=5" %a in ('netstat -ano ^| findstr :${port} ^| findstr LISTENING') do taskkill /PID %a /F`,
+      { shell: 'cmd.exe' },
+      () => resolve()
+    );
+  });
+}
+
 // ─── Python 서버 시작 ────────────────────────────────────────
-function startPythonServer() {
+async function startPythonServer() {
   if (pythonServer) return;
+
+  // 포트 충돌 시 기존 프로세스 먼저 종료
+  if (process.platform === 'win32') {
+    await killPortWin(SERVER_PORT);
+    await new Promise(r => setTimeout(r, 800));
+  }
 
   // ELECTRON_RUN_AS_NODE를 서버 자식 프로세스에 전파하지 않음
   const env = { ...process.env };

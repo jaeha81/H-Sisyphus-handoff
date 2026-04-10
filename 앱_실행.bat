@@ -35,6 +35,13 @@ if errorlevel 1 (
     timeout /t 3 >nul
 )
 
+:: ─── 포트 8765 선점 프로세스 종료 ──────────────────────────
+echo [OK] 포트 8765 정리 중...
+for /f "tokens=5" %%a in ('netstat -ano 2^>nul ^| findstr ":8765 " ^| findstr "LISTENING"') do (
+    taskkill /PID %%a /F >nul 2>&1
+)
+timeout /t 1 /nobreak >nul
+
 :: ─── Electron 앱 실행 ────────────────────────────────────────
 echo [OK] Electron 앱 실행 (포트 8765)...
 node_modules\.bin\electron.cmd .
