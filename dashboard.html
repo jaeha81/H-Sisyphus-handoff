@@ -4,7 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>JH 시지프스 — 관제 대시보드</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/node_modules/@supabase/supabase-js/dist/umd/supabase.js"></script>
+  <script>
+    // UMD가 var supabase로 선언 → let supabase와 충돌 방지용 저장
+    window.__supabaseLib__ = supabase;
+  </script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -316,7 +320,7 @@
 // 상태
 // ─────────────────────────────────────────────
 const AGENTS = ['sisyphus', 'scout', 'prometheus', 'oracle', 'verifier'];
-let supabase = null;
+let supabaseClient = null;
 let agentStates = Object.fromEntries(AGENTS.map(a => [a, 'idle']));
 let logs = [];
 let todos = [];
@@ -409,15 +413,20 @@ function setConnected(ok) {
 // Supabase 초기화
 // ─────────────────────────────────────────────
 async function initSupabase() {
-  // server.py /api/config 에서 Supabase 설정 로드
+  // 1순위: Electron preload (contextBridge)
+  // 2순위: /api/config fetch
   let cfg = { supabase_url: '', supabase_anon_key: '' };
-  try {
-    const res = await fetch('/api/config');
-    if (res.ok) cfg = await res.json();
-  } catch (e) {
-    // Electron file:// 환경에서는 window.SUPABASE_* 사용
-    cfg.supabase_url = window.SUPABASE_URL ?? '';
-    cfg.supabase_anon_key = window.SUPABASE_ANON_KEY ?? '';
+
+  if (window.electronAPI?.supabaseUrl) {
+    cfg.supabase_url = window.electronAPI.supabaseUrl;
+    cfg.supabase_anon_key = window.electronAPI.supabaseAnonKey;
+  } else {
+    try {
+      const res = await fetch('/api/config');
+      if (res.ok) cfg = await res.json();
+    } catch (e) {
+      console.error('[config] fetch 실패:', e);
+    }
   }
 
   if (!cfg.supabase_url || !cfg.supabase_anon_key) {
@@ -427,7 +436,15 @@ async function initSupabase() {
     return;
   }
 
-  supabase = window.supabase.createClient(cfg.supabase_url, cfg.supabase_anon_key);
+  try {
+    const lib = window.__supabaseLib__;
+    if (!lib?.createClient) throw new Error('supabase-js 로드 실패');
+    supabaseClient = lib.createClient(cfg.supabase_url, cfg.supabase_anon_key);
+  } catch (e) {
+    console.error('[Supabase] createClient 실패:', e);
+    setConnected(false);
+    return;
+  }
   setConnected(true);
   $('config-banner').style.display = 'none';
 
@@ -440,7 +457,7 @@ async function initSupabase() {
 // ─────────────────────────────────────────────
 async function loadInitialData() {
   // 최근 50개 로그
-  const { data: logData } = await supabase
+  const { data: logData } = await supabaseClient
     .from('agent_logs')
     .select('*')
     .order('ts', { ascending: false })
@@ -454,7 +471,7 @@ async function loadInitialData() {
   }
 
   // 가장 최근 세션 todos
-  const { data: sessionData } = await supabase
+  const { data: sessionData } = await supabaseClient
     .from('todos')
     .select('session_id')
     .order('created_at', { ascending: false })
@@ -462,7 +479,7 @@ async function loadInitialData() {
   if (sessionData && sessionData.length > 0) {
     const sid = sessionData[0].session_id;
     $('todo-session').textContent = `세션: ${sid.slice(0, 8)}...`;
-    const { data: todoData } = await supabase
+    const { data: todoData } = await supabaseClient
       .from('todos')
       .select('*')
       .eq('session_id', sid)
@@ -478,7 +495,7 @@ async function loadInitialData() {
 // ─────────────────────────────────────────────
 function subscribeRealtime() {
   // agent_logs
-  supabase
+  supabaseClient
     .channel('agent_logs_rt')
     .on('postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'agent_logs' },
@@ -492,19 +509,19 @@ function subscribeRealtime() {
     .subscribe();
 
   // todos
-  supabase
+  supabaseClient
     .channel('todos_rt')
     .on('postgres_changes',
       { event: '*', schema: 'public', table: 'todos' },
       async () => {
         // 현재 세션 다시 로드
-        const { data: sessionData } = await supabase
+        const { data: sessionData } = await supabaseClient
           .from('todos').select('session_id')
           .order('created_at', { ascending: false }).limit(1);
         if (sessionData && sessionData.length > 0) {
           const sid = sessionData[0].session_id;
           $('todo-session').textContent = `세션: ${sid.slice(0, 8)}...`;
-          const { data: todoData } = await supabase
+          const { data: todoData } = await supabaseClient
             .from('todos').select('*')
             .eq('session_id', sid).order('created_at');
           if (todoData) todos = todoData;

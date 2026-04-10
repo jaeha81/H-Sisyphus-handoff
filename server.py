@@ -15,6 +15,7 @@ from datetime import datetime
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 
 # ─── 경로 & 환경 설정 ────────────────────────────────────────
@@ -43,6 +44,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ─── 정적 파일 ───────────────────────────────────────────────
+_node_modules = ROOT / "node_modules"
+if _node_modules.exists():
+    app.mount("/node_modules", StaticFiles(directory=str(_node_modules)), name="node_modules")
 
 # ─── 라우트 ──────────────────────────────────────────────────
 
