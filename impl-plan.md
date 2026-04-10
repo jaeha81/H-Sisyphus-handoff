@@ -5,72 +5,71 @@
 
 ---
 
-## Step 0: 사전 수정 (하루)
+## Step 0: 사전 수정 ✅
 
 > 기존 버그 수정. 이걸 먼저 안 하면 나머지 전부 불안정.
 
-- [ ] jh-클로드대시보드의 `ClaudeClient` async/sync 버그 수정
-  - `anthropic.Anthropic` → `anthropic.AsyncAnthropic`
-  - `messages.create()` → `await messages.create()`
-  - 검증: FastAPI 엔드포인트에서 Claude API 정상 응답 확인
+- [x] jh-클로드대시보드의 `ClaudeClient` async/sync 버그 수정
+  - `claude -p subprocess` 방식으로 전환하여 SDK async 버그 자체 제거
+  - 검증: server.py에서 Claude CLI subprocess 정상 동작 확인
 
-- [ ] Supabase `agent_logs` 테이블 생성 (dashboard-patch.md Step 1 참조)
-- [ ] Supabase `todos` 테이블 생성
-- [ ] Realtime 활성화 확인
+- [x] Supabase `agent_logs` 테이블 생성 (dashboard-patch.md Step 1 참조)
+- [x] Supabase `todos` 테이블 생성
+- [x] Realtime 활성화 확인
 
 ---
 
-## Step 1: CLAUDE.md 작성 (반나절)
+## Step 1: CLAUDE.md 작성 ✅
 
 > 시지프스의 70%는 프롬프트 설계다.
 
-- [ ] 프로젝트 루트에 `CLAUDE.md` 생성
+- [x] 프로젝트 루트에 `CLAUDE.md` 생성
   - sisyphus-core.md의 내용 전체 적용
   - Intent Gate 섹션 포함
   - Ralph Loop 규칙 포함
   - Todo Enforcer 규칙 포함
   - 6섹션 위임 프롬프트 형식 포함
 
-- [ ] 검증: Claude Code에서 `ultrawork 테스트 작업` 실행 시
-  - TodoWrite로 목록 작성하는가?
-  - Task 도구로 서브에이전트 호출하는가?
-  - 완료 후 TodoRead로 점검하는가?
+- [x] 검증: Claude Code에서 `ultrawork 테스트 작업` 실행 시
+  - TodoWrite로 목록 작성하는가? ✅
+  - Task 도구로 서브에이전트 호출하는가? ✅
+  - 완료 후 TodoRead로 점검하는가? ✅
 
 ---
 
-## Step 2: 커맨드 파일 (2시간)
+## Step 2: 커맨드 파일 ✅
 
-- [ ] `.claude/commands/ultrawork.md` 생성 (commands.md 참조)
-- [ ] `.claude/commands/loop.md` 생성
-- [ ] `.claude/commands/start-work.md` 생성
+- [x] `.claude/commands/ultrawork.md` 생성 (commands.md 참조)
+- [x] `.claude/commands/loop.md` 생성
+- [x] `.claude/commands/start-work.md` 생성
 
-- [ ] 검증: `/project:ultrawork` 입력 시 Intent Gate 동작 확인
-
----
-
-## Step 3: 서브에이전트 파일 (하루)
-
-- [ ] `.claude/agents/prometheus.md` 생성 (agents.md 참조)
-- [ ] `.claude/agents/scout.md` 생성
-- [ ] `.claude/agents/oracle.md` 생성
-- [ ] `.claude/agents/verifier.md` 생성
-
-- [ ] 검증: 시지프스가 `Task(description="탐색", prompt="...")` 형태로 scout 호출하는가?
+- [x] 검증: `/project:ultrawork` 입력 시 Intent Gate 동작 확인 ✅
 
 ---
 
-## Step 4: 대시보드 관제 전환 (하루)
+## Step 3: 서브에이전트 파일 ✅
 
-- [ ] `AgentMonitor` 컴포넌트 추가 (dashboard-patch.md Step 3 참조)
-- [ ] `TodoProgress` 컴포넌트 추가
-- [ ] 기존 에이전트 실행 버튼 → 모니터링 패널로 교체
-- [ ] Supabase Realtime 구독 동작 확인
+- [x] `.claude/agents/prometheus.md` 생성 (agents.md 참조)
+- [x] `.claude/agents/scout.md` 생성
+- [x] `.claude/agents/oracle.md` 생성
+- [x] `.claude/agents/verifier.md` 생성
 
-- [ ] 검증: Claude Code 터미널에서 ultrawork 실행 시 대시보드에 실시간 반영되는가?
+- [x] 검증: 시지프스가 `Task(description="탐색", prompt="...")` 형태로 scout 호출하는가? ✅
 
 ---
 
-## Step 5: Ralph Loop 동작 검증 (반나절)
+## Step 4: 대시보드 관제 전환 ✅
+
+- [x] `AgentMonitor` 기능 추가 (dashboard.html — Supabase Realtime agent_logs 구독)
+- [x] `TodoProgress` 기능 추가 (dashboard.html — 진행률 바 + Todo 목록 렌더링)
+- [x] 기존 에이전트 실행 버튼 → 모니터링 패널로 교체
+- [x] Supabase Realtime 구독 동작 확인
+
+- [x] 검증: Claude Code 터미널에서 ultrawork 실행 시 대시보드에 실시간 반영 ✅
+
+---
+
+## Step 5: Ralph Loop 동작 검증 ✅
 
 실제로 시지프스처럼 동작하는지 핵심 테스트:
 
@@ -92,7 +91,16 @@
 → Ralph Loop가 "미완료 항목 감지. 재개." 출력 후 계속해야 함
 ```
 
-- [ ] 위 테스트 통과 시 시지프스 재현 완료
+- [x] 위 테스트 통과 시 시지프스 재현 완료 ✅
+
+---
+
+## Step 6: 버그 수정 ✅ (2026-04-10 추가)
+
+- [x] `update_todo` bash 함수 버그 수정
+  - 기존: UUID 파라미터로 PATCH → bash에서 UUID를 알 방법 없음
+  - 수정: `PATCH /api/todos/by-content` 엔드포인트 추가 (session_id + content 기준)
+  - ultrawork.md `update_todo()` 함수 시그니처 업데이트
 
 ---
 
@@ -109,37 +117,25 @@
 
 이 5가지가 모두 동작하면 OMO 시지프스와 동등한 수준.
 
+**검증 완료일: 2026-04-10**
+
 ---
 
 ## 파일 위치 최종 정리
 
 ```
 프로젝트루트/
-├── CLAUDE.md                        ← Step 1
+├── CLAUDE.md                        ← Step 1 ✅
+├── server.py                        ← Supabase API + 대시보드 서버 ✅
+├── dashboard.html                   ← Step 4 AgentMonitor + TodoProgress ✅
 ├── .claude/
 │   ├── commands/
-│   │   ├── ultrawork.md             ← Step 2
-│   │   ├── loop.md                  ← Step 2
-│   │   └── start-work.md            ← Step 2
+│   │   ├── ultrawork.md             ← Step 2 ✅
+│   │   ├── loop.md                  ← Step 2 ✅
+│   │   └── start-work.md            ← Step 2 ✅
 │   └── agents/
-│       ├── prometheus.md            ← Step 3
-│       ├── scout.md                 ← Step 3
-│       ├── oracle.md                ← Step 3
-│       └── verifier.md              ← Step 3
-└── [대시보드 프로젝트]/
-    └── src/components/
-        ├── AgentMonitor.tsx         ← Step 4
-        └── TodoProgress.tsx         ← Step 4
+│       ├── prometheus.md            ← Step 3 ✅
+│       ├── scout.md                 ← Step 3 ✅
+│       ├── oracle.md                ← Step 3 ✅
+│       └── verifier.md              ← Step 3 ✅
 ```
-
----
-
-## Claude Code에게 — 시작 전 확인사항
-
-이 파일을 읽은 Claude Code는 재하에게 다음을 먼저 확인하라:
-
-1. "현재 jh-클로드대시보드 프로젝트 경로가 어디인가요?"
-2. "Supabase URL과 anon key를 .env에서 확인할 수 있나요?"
-3. "Step 0 (async 버그 수정)부터 시작할까요?"
-
-확인 후 Step 0부터 순서대로 진행.

@@ -214,6 +214,38 @@ async def update_todo(todo_id: str, body: TodoUpdateBody):
     return {"ok": True, "data": result}
 
 
+class TodoUpdateByContentBody(BaseModel):
+    session_id: str
+    content: str
+    status: str   # pending | in_progress | completed
+
+
+@app.patch("/api/todos/by-content")
+async def update_todo_by_content(body: TodoUpdateByContentBody):
+    """
+    Todo 상태 업데이트 — session_id + content 기준 (UUID 불필요)
+    ultrawork/loop 커맨드에서 bash로 호출 시 UUID 없이 업데이트 가능
+
+    예시:
+      curl -X PATCH http://127.0.0.1:8765/api/todos/by-content \\
+        -H 'Content-Type: application/json' \\
+        -d '{"session_id":"abc123","content":"SCOUT: 코드 분석","status":"completed"}'
+    """
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return JSONResponse({"error": "Supabase 미설정"}, status_code=503)
+
+    payload = {
+        "status": body.status,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    result = await _sb_update(
+        "todos",
+        {"session_id": body.session_id, "content": body.content},
+        payload,
+    )
+    return {"ok": True, "data": result}
+
+
 @app.post("/api/todos/batch")
 async def create_todos_batch(request: Request):
     """

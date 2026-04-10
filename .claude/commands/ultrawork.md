@@ -24,11 +24,11 @@ create_todos() {
     -d "{\"session_id\":\"$1\",\"todos\":$2}" >/dev/null 2>&1 || true
 }
 
-# Todo 상태 업데이트
+# Todo 상태 업데이트 ($1: session_id, $2: content, $3: status)
 update_todo() {
-  curl -sf -X PATCH "http://127.0.0.1:8765/api/todos/$1" \
+  curl -sf -X PATCH "http://127.0.0.1:8765/api/todos/by-content" \
     -H "Content-Type: application/json" \
-    -d "{\"status\":\"$2\"}" >/dev/null 2>&1 || true
+    -d "{\"session_id\":\"$1\",\"content\":\"$2\",\"status\":\"$3\"}" >/dev/null 2>&1 || true
 }
 ```
 
