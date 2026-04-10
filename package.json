@@ -1,0 +1,48 @@
+{
+  "name": "jh-sisyphus-dashboard",
+  "version": "1.0.0",
+  "description": "JH 시지프스 — Claude Code 멀티에이전트 관제 대시보드",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "cross-env NODE_ENV=development electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.jh.sisyphus-dashboard",
+    "productName": "JH 시지프스 관제",
+    "icon": "assets/icon.ico",
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "extraResources": [
+      {
+        "from": ".",
+        "to": ".",
+        "filter": [
+          "server.py",
+          "dashboard.html",
+          ".env",
+          "requirements.txt"
+        ]
+      }
+    ],
+    "files": [
+      "main.js",
+      "preload.js",
+      "dashboard.html",
+      "package.json"
+    ]
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "electron": "^28.3.3",
+    "electron-builder": "^25.1.8"
+  }
+}
